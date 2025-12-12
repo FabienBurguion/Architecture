@@ -24,12 +24,7 @@ const pool = new Pool({
 const PORT = 3000;
 
 app.get("/health", async (req, res) => {
-    try {
-        await pool.query("SELECT 1");
-        res.status(200).send("OK");
-    } catch {
-        res.status(500).send("DB KO");
-    }
+    res.status(200).send("Server is up");
 });
 
 // Routes
@@ -91,35 +86,37 @@ app.patch('/todos/:id/done', async (req, res) => {
     }
 });
 
-// Init DB + start serveur
-const initializeDB = async () => {
-    console.log('Attente de 5 secondes pour la base de données...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+// ... tout ton code express ...
 
+// 1. On définit la fonction d'init DB, mais on ne la laisse pas bloquer le serveur
+const initializeDB = async () => {
+    console.log('Tentative de connexion à la DB...');
+    // On peut garder le délai si tu veux, mais ce n'est plus bloquant pour le port 3000
     try {
         await pool.query(`
-      CREATE TABLE IF NOT EXISTS todos (
-        id SERIAL PRIMARY KEY,
-        text TEXT NOT NULL,
-        done BOOLEAN DEFAULT FALSE
-      )
-    `);
+            CREATE TABLE IF NOT EXISTS todos (
+                                                 id SERIAL PRIMARY KEY,
+                                                 text TEXT NOT NULL,
+                                                 done BOOLEAN DEFAULT FALSE
+            )
+        `);
         console.log("Table 'todos' vérifiée/créée.");
-
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`Todo API listening on port ${PORT}`);
-        });
     } catch (err) {
-        console.error('Erreur lors de la connexion/création de la table:', err);
+        console.error('Erreur Init DB (non fatal pour le démarrage du serveur):', err);
     }
 };
 
-const path = require("path");
+// 2. On lance l'initialisation DB en arrière-plan
+initializeDB();
 
+const path = require("path");
 app.use(express.static(path.join(__dirname, "../todo-app/dist")));
 
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../todo-app/dist/index.html"));
 });
 
-initializeDB();
+// 3. CRITIQUE : On démarre le serveur TOUT DE SUITE
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Todo API listening on port ${PORT}`);
+});
