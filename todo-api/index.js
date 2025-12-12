@@ -22,6 +22,10 @@ const pool = new Pool({
 
 const PORT = 3000;
 
+app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+});
+
 // Routes
 app.get('/todos', async (req, res) => {
     try {
