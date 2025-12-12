@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -22,8 +23,13 @@ const pool = new Pool({
 
 const PORT = 3000;
 
-app.get("/health", (req, res) => {
-    res.status(200).send("OK");
+app.get("/health", async (req, res) => {
+    try {
+        await pool.query("SELECT 1");
+        res.status(200).send("OK");
+    } catch {
+        res.status(500).send("DB KO");
+    }
 });
 
 // Routes
@@ -107,5 +113,13 @@ const initializeDB = async () => {
         console.error('Erreur lors de la connexion/création de la table:', err);
     }
 };
+
+const path = require("path");
+
+app.use(express.static(path.join(__dirname, "../todo-app/dist")));
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../todo-app/dist/index.html"));
+});
 
 initializeDB();
