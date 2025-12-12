@@ -88,21 +88,24 @@ app.patch('/todos/:id/done', async (req, res) => {
 
 // ... tout ton code express ...
 
-// 1. On définit la fonction d'init DB, mais on ne la laisse pas bloquer le serveur
-const initializeDB = async () => {
-    console.log('Tentative de connexion à la DB...');
-    // On peut garder le délai si tu veux, mais ce n'est plus bloquant pour le port 3000
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS todos (
-                                                 id SERIAL PRIMARY KEY,
-                                                 text TEXT NOT NULL,
-                                                 done BOOLEAN DEFAULT FALSE
-            )
-        `);
-        console.log("Table 'todos' vérifiée/créée.");
-    } catch (err) {
-        console.error('Erreur Init DB (non fatal pour le démarrage du serveur):', err);
+const initializeDB = async (retries = 5) => {
+    while (retries > 0) {
+        try {
+            console.log(`Tentative de connexion DB (${retries} restantes)...`);
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS todos (
+                    id SERIAL PRIMARY KEY,
+                    text TEXT NOT NULL,
+                    done BOOLEAN DEFAULT FALSE
+                )
+            `);
+            console.log("✅ Table 'todos' prête.");
+            break; // Sortie de la boucle si succès
+        } catch (err) {
+            console.error('⚠️ DB pas prête, nouvelle tentative dans 5s...');
+            retries -= 1;
+            await new Promise(res => setTimeout(res, 5000));
+        }
     }
 };
 
