@@ -106,7 +106,7 @@ const initializeDB = async () => {
     `);
         console.log("Table 'todos' vérifiée/créée.");
 
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`Todo API listening on port ${PORT}`);
         });
     } catch (err) {
